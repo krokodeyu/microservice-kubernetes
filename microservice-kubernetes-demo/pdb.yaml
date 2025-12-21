@@ -1,0 +1,36 @@
+# Order PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: order
+
+---
+
+# Catalog PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: catalog-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: catalog
+
+---
+
+# Customer PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: customer-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: customer

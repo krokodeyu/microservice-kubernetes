@@ -1,204 +1,300 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
-  labels:
-    run: apache
   name: apache
+  labels:
+    app: apache
+    version: v1
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: apache
-  strategy: {}
+      app: apache
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        run: apache
+        app: apache
+        version: v1
     spec:
       containers:
       - image: docker.io/ewolff/microservice-kubernetes-demo-apache:latest
         name: apache
         ports:
         - containerPort: 80
-        resources: {}
-status: {}
 
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
-  labels:
-    run: catalog
   name: catalog
+  labels:
+    app: catalog
+    version: v1
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      run: catalog
-  strategy: {}
+      app: catalog
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        run: catalog
+        app: catalog
+        version: v1
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: catalog
+              topologyKey: kubernetes.io/hostname
       containers:
-      - image: docker.io/ewolff/microservice-kubernetes-demo-catalog:latest
-        name: catalog
+      - name: catalog
+        image: docker.io/ewolff/microservice-kubernetes-demo-catalog:latest
         ports:
         - containerPort: 8080
+          name: http
         env:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "kafka:9092"
-        resources: {}
-status: {}
+        - name: JAVA_OPTS
+          value: "-Xms256m -Xmx512m"
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "384Mi"
+          limits:
+            cpu: "1000m"
+            memory: "768Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
 
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
-  labels:
-    run: customer
   name: customer
+  labels:
+    app: customer
+    version: v1
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      run: customer
-  strategy: {}
+      app: customer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        run: customer
+        app: customer
+        version: v1
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: customer
+              topologyKey: kubernetes.io/hostname
       containers:
-      - image: docker.io/ewolff/microservice-kubernetes-demo-customer:latest
-        name: customer
+      - name: customer
+        image: docker.io/ewolff/microservice-kubernetes-demo-customer:latest
         ports:
         - containerPort: 8080
+          name: http
         env:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "kafka:9092"
-        resources: {}
-status: {}
+        - name: JAVA_OPTS
+          value: "-Xms256m -Xmx512m"
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "384Mi"
+          limits:
+            cpu: "1000m"
+            memory: "768Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
 
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
-  labels:
-    run: order
   name: order
+  labels:
+    app: order
+    version: v1
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      run: order
-  strategy: {}
+      app: order
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        run: order
+        app: order
+        version: v1
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: order
+              topologyKey: kubernetes.io/hostname
       containers:
-      - image: docker.io/ewolff/microservice-kubernetes-demo-order:latest
-        name: order
+      - name: order
+        image: docker.io/ewolff/microservice-kubernetes-demo-order:latest
         ports:
         - containerPort: 8080
+          name: http
         env:
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: "kafka:9092"
         - name: KAFKA_ENABLED
           value: "true"
-        resources: {}
-status: {}
+        - name: JAVA_OPTS
+          value: "-Xms256m -Xmx512m"
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "384Mi"
+          limits:
+            cpu: "1000m"
+            memory: "768Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
-  labels:
-    run: apache
   name: apache
+  labels:
+    app: apache
 spec:
   ports:
   - port: 80
     protocol: TCP
     targetPort: 80
   selector:
-    run: apache
+    app: apache
   type: LoadBalancer
-status:
-  loadBalancer: {}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
-  labels:
-    run: catalog
   name: catalog
+  labels:
+    app: catalog
 spec:
   ports:
   - port: 8080
     protocol: TCP
     targetPort: 8080
   selector:
-    run: catalog
+    app: catalog
   type: LoadBalancer
-status:
-  loadBalancer: {}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
-  labels:
-    run: customer
   name: customer
+  labels:
+    app: customer
 spec:
   ports:
   - port: 8080
     protocol: TCP
     targetPort: 8080
   selector:
-    run: customer
+    app: customer
   type: LoadBalancer
-status:
-  loadBalancer: {}
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
-  labels:
-    run: order
   name: order
+  labels:
+    app: order
 spec:
   ports:
   - port: 8080
     protocol: TCP
     targetPort: 8080
   selector:
-    run: order
+    app: order
   type: LoadBalancer
-status:
-  loadBalancer: {}
