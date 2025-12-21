@@ -14,6 +14,13 @@ spring:
   cloud:
     refresh:
       refreshable: none
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
   port: 8080
@@ -70,3 +77,9 @@ resilience4j:
       customerService:
         timeoutDuration: 5s
         cancelRunningFuture: true
+
+# Kafka Configuration
+kafka:
+  enabled: ${KAFKA_ENABLED:true}
+  topic:
+    order-events: order-events

@@ -76,7 +76,7 @@ class OrderController {
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ModelAndView post(@PathVariable("id") long id) {
-		orderRepository.deleteById(id);
+		orderService.deleteOrder(id);
 
 		return new ModelAndView("success");
 	}
