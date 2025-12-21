@@ -285,3 +285,130 @@ deployment "order" deleted
 ```
 
 This skript must be executed before a new version of the pods can be deployed.
+
+## High Availability Deployment
+
+### Prerequisites
+
+* Ensure you have a Kubernetes cluster with metrics-server installed for HPA to work
+* For Minikube, enable metrics-server: `minikube addons enable metrics-server`
+
+### Deployment Steps
+
+1. **Deploy Kafka infrastructure**:
+   ```bash
+   kubectl apply -f kafka.yaml
+   ```
+
+2. **Wait for Kafka to be ready**:
+   ```bash
+   kubectl wait --for=condition=ready pod -l app=kafka --timeout=120s
+   ```
+
+3. **Deploy microservices with multi-replica configuration**:
+   ```bash
+   kubectl apply -f microservices.yaml
+   ```
+
+4. **Deploy HPA (Horizontal Pod Autoscaler) for auto-scaling**:
+   ```bash
+   kubectl apply -f hpa.yaml
+   ```
+
+5. **Deploy PDB (Pod Disruption Budget) for high availability**:
+   ```bash
+   kubectl apply -f pdb.yaml
+   ```
+
+### Monitoring and Management
+
+**View deployment status**:
+```bash
+kubectl get deployments
+```
+
+**Check HPA status**:
+```bash
+kubectl get hpa
+```
+
+**View HPA details**:
+```bash
+kubectl describe hpa order-hpa
+kubectl describe hpa catalog-hpa
+kubectl describe hpa customer-hpa
+```
+
+**Check pod distribution across nodes**:
+```bash
+kubectl get pods -o wide
+```
+
+**View pod distribution by service**:
+```bash
+kubectl get pods -o wide -l app=order
+kubectl get pods -o wide -l app=catalog
+kubectl get pods -o wide -l app=customer
+```
+
+**Check Pod Disruption Budgets**:
+```bash
+kubectl get pdb
+```
+
+### Manual Scaling (Optional)
+
+While HPA handles automatic scaling, you can manually scale if needed:
+
+```bash
+# Scale order service to 5 replicas
+kubectl scale deployment order --replicas=5
+
+# Scale catalog service to 3 replicas
+kubectl scale deployment catalog --replicas=3
+```
+
+### Testing Auto-Scaling
+
+To test HPA auto-scaling behavior, you can generate load:
+
+```bash
+# Run load generator in a pod
+kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://order:8080/; done"
+```
+
+Watch HPA scaling in real-time:
+```bash
+kubectl get hpa -w
+```
+
+### Resource Configuration
+
+Each microservice (Order, Catalog, Customer) is configured with:
+
+* **Initial replicas**: 2
+* **Resource requests**: 250m CPU, 384Mi memory per pod
+* **Resource limits**: 1000m CPU (1 core), 768Mi memory per pod
+* **Auto-scaling**: 
+  - Min replicas: 2
+  - Max replicas: 8-10 (Order: 10, Catalog/Customer: 8)
+  - CPU threshold: 70%
+  - Memory threshold: 80%
+* **Health checks**: Liveness and readiness probes on `/actuator/health/liveness` and `/actuator/health/readiness`
+* **Pod anti-affinity**: Prefers spreading replicas across different nodes
+
+### Expected Behavior
+
+1. **Multi-replica deployment**: Order, Catalog, and Customer services run with 2+ replicas
+2. **Automatic scaling**: 
+   - Scales up when CPU > 70% or Memory > 80%
+   - Scales down after 5-minute stabilization window
+   - Scale-up happens within 15 seconds
+3. **High availability**:
+   - Zero-downtime rolling updates
+   - At least 1 replica remains available during node maintenance
+   - Pods distributed across different nodes when possible
+4. **Resource management**: 
+   - Kubernetes scheduler respects resource requests
+   - Pods are limited to defined CPU and memory constraints
+
