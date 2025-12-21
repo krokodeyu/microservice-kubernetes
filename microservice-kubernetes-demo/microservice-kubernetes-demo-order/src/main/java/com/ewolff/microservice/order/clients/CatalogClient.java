@@ -19,6 +19,9 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+
 @Component
 public class CatalogClient {
 
@@ -53,13 +56,27 @@ public class CatalogClient {
 		return new RestTemplate(Collections.<HttpMessageConverter<?>>singletonList(converter));
 	}
 
+	@CircuitBreaker(name = "catalogService", fallbackMethod = "priceFallback")
+	@Retry(name = "catalogService")
 	public double price(long itemId) {
 		return getOne(itemId).getPrice();
 	}
 
+	public double priceFallback(long itemId, Throwable t) {
+		log.warn("Catalog service unavailable, returning default price for item: {}. Error: {}", itemId, t.getMessage());
+		return 0.0;
+	}
+
+	@CircuitBreaker(name = "catalogService", fallbackMethod = "findAllFallback")
+	@Retry(name = "catalogService")
 	public Collection<Item> findAll() {
 		PagedModel<Item> pagedResources = restTemplate.getForObject(catalogURL(), ItemPagedResources.class);
 		return pagedResources.getContent();
+	}
+
+	public Collection<Item> findAllFallback(Throwable t) {
+		log.warn("Catalog service unavailable, returning empty list. Error: {}", t.getMessage());
+		return Collections.emptyList();
 	}
 
 	private String catalogURL() {
@@ -68,7 +85,14 @@ public class CatalogClient {
 		return url;
 	}
 
+	@CircuitBreaker(name = "catalogService", fallbackMethod = "getOneFallback")
+	@Retry(name = "catalogService")
 	public Item getOne(long itemId) {
 		return restTemplate.getForObject(catalogURL() + itemId, Item.class);
+	}
+
+	public Item getOneFallback(long itemId, Throwable t) {
+		log.warn("Catalog service unavailable, returning fallback item for id: {}. Error: {}", itemId, t.getMessage());
+		return new Item(itemId, "Item Unavailable", 0.0);
 	}
 }
