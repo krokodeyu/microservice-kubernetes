@@ -63,7 +63,7 @@ public class CustomerClient {
 
 	public boolean isValidCustomerIdFallback(long customerId, Throwable t) {
 		log.warn("Customer service unavailable for validation, assuming customer {} is valid. Error: {}", customerId, t.getMessage());
-		// 降级时假设客户有效，避免阻塞订单流程
+		// Assuming customer is valid during fallback to avoid blocking order flow
 		return true;
 	}
 
@@ -107,6 +107,6 @@ public class CustomerClient {
 
 	public Customer getOneFallback(long customerId, Throwable t) {
 		log.warn("Customer service unavailable, returning fallback customer for id: {}. Error: {}", customerId, t.getMessage());
-		return new Customer(customerId, "未知", "客户", "unknown@example.com", "未知地址", "未知城市");
+		return new Customer(customerId, "Unknown", "Customer", "unknown@example.com", "Unknown Address", "Unknown City");
 	}
 }

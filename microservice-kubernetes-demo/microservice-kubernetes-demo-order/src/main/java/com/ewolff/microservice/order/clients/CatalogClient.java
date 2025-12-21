@@ -93,6 +93,6 @@ public class CatalogClient {
 
 	public Item getOneFallback(long itemId, Throwable t) {
 		log.warn("Catalog service unavailable, returning fallback item for id: {}. Error: {}", itemId, t.getMessage());
-		return new Item(itemId, "商品暂不可用", 0.0);
+		return new Item(itemId, "Item Unavailable", 0.0);
 	}
 }
