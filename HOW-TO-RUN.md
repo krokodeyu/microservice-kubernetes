@@ -284,7 +284,7 @@ deployment "customer" deleted
 deployment "order" deleted
 ```
 
-This skript must be executed before a new version of the pods can be deployed.
+This script must be executed before a new version of the pods can be deployed.
 
 ## High Availability Deployment
 
