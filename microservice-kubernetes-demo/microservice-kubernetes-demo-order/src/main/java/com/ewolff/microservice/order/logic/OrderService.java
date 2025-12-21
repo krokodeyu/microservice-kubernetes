@@ -21,7 +21,7 @@ class OrderService {
 	@Autowired
 	private OrderService(OrderRepository orderRepository,
 			CustomerClient customerClient, CatalogClient itemClient,
-			OrderEventPublisher orderEventPublisher) {
+			@Autowired(required = false) OrderEventPublisher orderEventPublisher) {
 		super();
 		this.orderRepository = orderRepository;
 		this.customerClient = customerClient;
@@ -39,13 +39,15 @@ class OrderService {
 		Order savedOrder = orderRepository.save(order);
 		
 		// 发布订单创建事件
-		orderEventPublisher.publishOrderCreated(
-			savedOrder.getId(),
-			savedOrder.getCustomerId(),
-			savedOrder.getOrderLine().stream()
-				.map(line -> new OrderLineEvent(line.getItemId(), line.getCount()))
-				.collect(Collectors.toList())
-		);
+		if (orderEventPublisher != null) {
+			orderEventPublisher.publishOrderCreated(
+				savedOrder.getId(),
+				savedOrder.getCustomerId(),
+				savedOrder.getOrderLine().stream()
+					.map(line -> new OrderLineEvent(line.getItemId(), line.getCount()))
+					.collect(Collectors.toList())
+			);
+		}
 		
 		return savedOrder;
 	}
@@ -57,7 +59,9 @@ class OrderService {
 	public void deleteOrder(long orderId) {
 		orderRepository.deleteById(orderId);
 		// 发布订单删除事件
-		orderEventPublisher.publishOrderDeleted(orderId);
+		if (orderEventPublisher != null) {
+			orderEventPublisher.publishOrderDeleted(orderId);
+		}
 	}
 
 }

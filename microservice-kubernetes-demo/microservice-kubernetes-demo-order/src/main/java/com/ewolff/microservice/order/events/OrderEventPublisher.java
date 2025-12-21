@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import com.ewolff.microservice.order.events.OrderEvent.EventType;
 import com.ewolff.microservice.order.events.OrderEvent.OrderLineEvent;
 
 @Component
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class OrderEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(OrderEventPublisher.class);

@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -16,6 +17,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 @EnableKafka
 @Configuration
+@ConditionalOnProperty(name = "kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:kafka:9092}")
