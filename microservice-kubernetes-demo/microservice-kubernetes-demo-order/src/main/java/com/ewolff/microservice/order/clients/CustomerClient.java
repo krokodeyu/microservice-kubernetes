@@ -21,6 +21,9 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+
 @Component
 public class CustomerClient {
 
@@ -43,6 +46,8 @@ public class CustomerClient {
 		this.customerServicePort = customerServicePort;
 	}
 
+	@CircuitBreaker(name = "customerService", fallbackMethod = "isValidCustomerIdFallback")
+	@Retry(name = "customerService")
 	public boolean isValidCustomerId(long customerId) {
 		RestTemplate restTemplate = new RestTemplate();
 		try {
@@ -54,6 +59,12 @@ public class CustomerClient {
 			else
 				throw e;
 		}
+	}
+
+	public boolean isValidCustomerIdFallback(long customerId, Throwable t) {
+		log.warn("Customer service unavailable for validation, assuming customer {} is valid. Error: {}", customerId, t.getMessage());
+		// 降级时假设客户有效，避免阻塞订单流程
+		return true;
 	}
 
 	protected RestTemplate getRestTemplate() {
@@ -68,10 +79,17 @@ public class CustomerClient {
 		return new RestTemplate(Collections.<HttpMessageConverter<?>>singletonList(converter));
 	}
 
+	@CircuitBreaker(name = "customerService", fallbackMethod = "findAllFallback")
+	@Retry(name = "customerService")
 	public Collection<Customer> findAll() {
 		PagedModel<Customer> pagedResources = getRestTemplate().getForObject(customerURL(),
 				CustomerPagedResources.class);
 		return pagedResources.getContent();
+	}
+
+	public Collection<Customer> findAllFallback(Throwable t) {
+		log.warn("Customer service unavailable, returning empty list. Error: {}", t.getMessage());
+		return Collections.emptyList();
 	}
 
 	private String customerURL() {
@@ -81,7 +99,14 @@ public class CustomerClient {
 
 	}
 
+	@CircuitBreaker(name = "customerService", fallbackMethod = "getOneFallback")
+	@Retry(name = "customerService")
 	public Customer getOne(long customerId) {
 		return restTemplate.getForObject(customerURL() + customerId, Customer.class);
+	}
+
+	public Customer getOneFallback(long customerId, Throwable t) {
+		log.warn("Customer service unavailable, returning fallback customer for id: {}. Error: {}", customerId, t.getMessage());
+		return new Customer(customerId, "未知", "客户", "unknown@example.com", "未知地址", "未知城市");
 	}
 }
