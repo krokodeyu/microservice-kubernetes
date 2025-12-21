@@ -38,7 +38,7 @@ class OrderService {
 		}
 		Order savedOrder = orderRepository.save(order);
 		
-		// 发布订单创建事件
+		// Publish order created event
 		if (orderEventPublisher != null) {
 			orderEventPublisher.publishOrderCreated(
 				savedOrder.getId(),
@@ -58,7 +58,7 @@ class OrderService {
 	
 	public void deleteOrder(long orderId) {
 		orderRepository.deleteById(orderId);
-		// 发布订单删除事件
+		// Publish order deleted event
 		if (orderEventPublisher != null) {
 			orderEventPublisher.publishOrderDeleted(orderId);
 		}

@@ -32,7 +32,7 @@ public class OrderEventListener {
     }
     
     private void handleOrderCreated(OrderEvent event) {
-        // 可以在这里实现：更新客户订单统计、发送通知等
+        // Can be used for: updating customer order statistics, sending notifications, etc.
         log.info("Processing ORDER_CREATED for customer: {}", event.getCustomerId());
     }
     

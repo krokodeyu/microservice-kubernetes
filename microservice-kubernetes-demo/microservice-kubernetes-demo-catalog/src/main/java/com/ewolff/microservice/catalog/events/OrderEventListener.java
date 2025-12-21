@@ -33,7 +33,7 @@ public class OrderEventListener {
     }
     
     private void handleOrderCreated(OrderEvent event) {
-        // 可以在这里实现：库存扣减、销售统计等
+        // Can be used for: inventory deduction, sales statistics, etc.
         log.info("Processing ORDER_CREATED: orderId={}", event.getOrderId());
         if (event.getOrderLines() != null) {
             event.getOrderLines().forEach(line -> 
@@ -43,7 +43,7 @@ public class OrderEventListener {
     }
     
     private void handleOrderDeleted(OrderEvent event) {
-        // 可以在这里实现：库存恢复等
+        // Can be used for: inventory restoration, etc.
         log.info("Processing ORDER_DELETED: orderId={}", event.getOrderId());
     }
 }
