@@ -117,7 +117,7 @@ public class CustomerClient {
 		return new Customer(customerId, "Unknown", "Customer", "unknown@example.com", "Unknown Address", "Unknown City");
 	}
 
-	// 定时清理缓存（每小时）
+	// Scheduled cache cleanup (every hour)
 	@Scheduled(fixedRate = 3600000)
 	@CacheEvict(value = {"customers", "customersList"}, allEntries = true)
 	public void evictAllCustomersCache() {

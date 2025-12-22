@@ -103,7 +103,7 @@ public class CatalogClient {
 		return new Item(itemId, "Item Unavailable", 0.0);
 	}
 
-	// 定时清理缓存（每小时）
+	// Scheduled cache cleanup (every hour)
 	@Scheduled(fixedRate = 3600000)
 	@CacheEvict(value = {"items", "itemsList"}, allEntries = true)
 	public void evictAllItemsCache() {

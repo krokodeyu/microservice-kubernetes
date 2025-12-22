@@ -47,7 +47,7 @@ public class RedisConfig {
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))  // 默认 10 分钟过期
+                .entryTtl(Duration.ofMinutes(10))  // Default 10 minute expiration
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
                 .disableCachingNullValues();
@@ -55,9 +55,9 @@ public class RedisConfig {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfig)
                 .withCacheConfiguration("items", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)))  // Item 缓存 30 分钟
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)))  // Item cache 30 minutes
                 .withCacheConfiguration("customers", 
-                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)))  // Customer 缓存 15 分钟
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)))  // Customer cache 15 minutes
                 .build();
     }
 }
