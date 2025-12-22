@@ -205,6 +205,10 @@ spec:
           value: "kafka:9092"
         - name: KAFKA_ENABLED
           value: "true"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
         - name: JAVA_OPTS
           value: "-Xms256m -Xmx512m"
         resources:

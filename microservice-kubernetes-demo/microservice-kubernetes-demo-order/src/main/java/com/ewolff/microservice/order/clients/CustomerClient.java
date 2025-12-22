@@ -8,12 +8,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.mediatype.hal.Jackson2HalModule;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -79,9 +82,11 @@ public class CustomerClient {
 		return new RestTemplate(Collections.<HttpMessageConverter<?>>singletonList(converter));
 	}
 
+	@Cacheable(value = "customersList", unless = "#result == null || #result.isEmpty()")
 	@CircuitBreaker(name = "customerService", fallbackMethod = "findAllFallback")
 	@Retry(name = "customerService")
 	public Collection<Customer> findAll() {
+		log.info("Fetching all customers from Customer service (cache miss)");
 		PagedModel<Customer> pagedResources = getRestTemplate().getForObject(customerURL(),
 				CustomerPagedResources.class);
 		return pagedResources.getContent();
@@ -99,14 +104,23 @@ public class CustomerClient {
 
 	}
 
+	@Cacheable(value = "customers", key = "#customerId", unless = "#result == null")
 	@CircuitBreaker(name = "customerService", fallbackMethod = "getOneFallback")
 	@Retry(name = "customerService")
 	public Customer getOne(long customerId) {
+		log.info("Fetching customer {} from Customer service (cache miss)", customerId);
 		return restTemplate.getForObject(customerURL() + customerId, Customer.class);
 	}
 
 	public Customer getOneFallback(long customerId, Throwable t) {
 		log.warn("Customer service unavailable, returning fallback customer for id: {}. Error: {}", customerId, t.getMessage());
 		return new Customer(customerId, "Unknown", "Customer", "unknown@example.com", "Unknown Address", "Unknown City");
+	}
+
+	// Scheduled cache cleanup (every hour)
+	@Scheduled(fixedRate = 3600000)
+	@CacheEvict(value = {"customers", "customersList"}, allEntries = true)
+	public void evictAllCustomersCache() {
+		log.info("Evicting all customers cache");
 	}
 }
