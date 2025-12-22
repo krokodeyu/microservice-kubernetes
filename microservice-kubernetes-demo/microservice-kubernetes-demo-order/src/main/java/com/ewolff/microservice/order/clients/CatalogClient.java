@@ -8,11 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.mediatype.hal.Jackson2HalModule;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -67,9 +70,11 @@ public class CatalogClient {
 		return 0.0;
 	}
 
+	@Cacheable(value = "itemsList", unless = "#result == null || #result.isEmpty()")
 	@CircuitBreaker(name = "catalogService", fallbackMethod = "findAllFallback")
 	@Retry(name = "catalogService")
 	public Collection<Item> findAll() {
+		log.info("Fetching all items from Catalog service (cache miss)");
 		PagedModel<Item> pagedResources = restTemplate.getForObject(catalogURL(), ItemPagedResources.class);
 		return pagedResources.getContent();
 	}
@@ -85,14 +90,23 @@ public class CatalogClient {
 		return url;
 	}
 
+	@Cacheable(value = "items", key = "#itemId", unless = "#result == null")
 	@CircuitBreaker(name = "catalogService", fallbackMethod = "getOneFallback")
 	@Retry(name = "catalogService")
 	public Item getOne(long itemId) {
+		log.info("Fetching item {} from Catalog service (cache miss)", itemId);
 		return restTemplate.getForObject(catalogURL() + itemId, Item.class);
 	}
 
 	public Item getOneFallback(long itemId, Throwable t) {
 		log.warn("Catalog service unavailable, returning fallback item for id: {}. Error: {}", itemId, t.getMessage());
 		return new Item(itemId, "Item Unavailable", 0.0);
+	}
+
+	// 定时清理缓存（每小时）
+	@Scheduled(fixedRate = 3600000)
+	@CacheEvict(value = {"items", "itemsList"}, allEntries = true)
+	public void evictAllItemsCache() {
+		log.info("Evicting all items cache");
 	}
 }
