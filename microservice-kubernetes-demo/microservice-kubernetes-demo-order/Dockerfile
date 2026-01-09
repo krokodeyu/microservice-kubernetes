@@ -1,27 +1,32 @@
-# ===== 构建阶段 =====
+# ===== build stage =====
 FROM maven:3.9.6-eclipse-temurin-11 AS build
-WORKDIR /build
+WORKDIR /workspace
 
-# 加入 Maven 国内源
-COPY maven-settings.xml /root/.m2/settings.xml
+# 先复制最上层 pom（如果仓库根就是多模块父 pom）
+COPY pom.xml ./pom.xml
 
-# 复制当前模块的 pom
-COPY pom.xml .
+# 再复制 demo 父工程 pom（解决 com.ewolff:microservice-kubernetes-demo 这个 parent）
+COPY microservice-kubernetes-demo/pom.xml ./microservice-kubernetes-demo/pom.xml
 
-# 先下载依赖（利用缓存）
-RUN mvn -B -q -DskipTests dependency:go-offline
+# 再复制 order 模块 pom
+COPY microservice-kubernetes-demo/microservice-kubernetes-demo-order/pom.xml \
+     ./microservice-kubernetes-demo/microservice-kubernetes-demo-order/pom.xml
 
-# 再复制源码
-COPY src src
+# 先离线拉依赖（此时 parent 已可解析）
+RUN mvn -B -q -DskipTests -pl microservice-kubernetes-demo/microservice-kubernetes-demo-order -am dependency:go-offline
 
-# 打包
-RUN mvn -B -q -DskipTests package
+# 再复制源码（只复制 demo 目录即可）
+COPY microservice-kubernetes-demo ./microservice-kubernetes-demo
 
-# ===== 运行阶段 =====
+# 编译打包 order
+RUN mvn -B -q -DskipTests -pl microservice-kubernetes-demo/microservice-kubernetes-demo-order -am package
+
+# ===== runtime stage =====
 FROM eclipse-temurin:11-jre
 WORKDIR /app
 
-COPY --from=build /build/target/*.jar app.jar
+# 拷贝打出来的 jar
+COPY --from=build /workspace/microservice-kubernetes-demo/microservice-kubernetes-demo-order/target/*.jar /app/app.jar
 
 EXPOSE 8080
 CMD ["java","-Xms256m","-Xmx512m","-jar","/app/app.jar"]
