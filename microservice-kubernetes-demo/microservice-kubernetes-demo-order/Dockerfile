@@ -2,6 +2,9 @@
 FROM maven:3.9.6-eclipse-temurin-11 AS build
 WORKDIR /build
 
+# 加入 Maven 国内源
+COPY maven-settings.xml /root/.m2/settings.xml
+
 # 复制当前模块的 pom
 COPY pom.xml .
 
